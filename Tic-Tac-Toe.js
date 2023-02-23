@@ -1,6 +1,6 @@
 // Module pattern - as only one needed
 //The GameBoard represents the state of the board
-var GameBoard = function () {
+var GameBoard = (function () {
 	const rows = 3;
 	const columns = 3;
 	const board = [];
@@ -9,13 +9,13 @@ var GameBoard = function () {
 	for (let i = 0; i < rows; i++) {
 		board[i] = [];
 		for (let j = 0; j < columns; j++) {
-			board[i].push(Cell());
+			board[i].push(Cell);
 		}
 	}
 	//Checks if space is free, then adds marker using cell addMarker method
 	function placeMarker(row, column, player) {
 		//checks if cell is available to place the players token. If the move is invalid execution is stopped, prevents players from playing in spots that are already taken
-		if (board[row][column].getMarker === "") {
+		if (board[row][column].getMarker() === "") {
 			return;
 		} else {
 			// Otherwise, I have a valid cell
@@ -35,9 +35,9 @@ var GameBoard = function () {
 
 	// an interface for the rest of our application to interact with the board
 	return { getBoard, placeMarker, printBoard };
-};
+})();
 // Factory function pattern - as we want multiple cells
-const Cell = () => {
+var Cell = () => {
 	let value = "";
 	let playerId;
 	// Accept a player's marker to change the value of the cell allowing players to add marks to a specific spot on the board
@@ -53,43 +53,65 @@ const Cell = () => {
 // Factory function pattern - as we want multiple players
 //  Players stored in objects
 const player = (name, marker) => {
+	this.name = name;
+	this.marker = marker;
 	const getName = () => name;
 	const getMarker = () => marker;
 	return { getName, getMarker };
 };
 // Module pattern - as only one needed
-var GameController = function (player1, player2) {
-	const players = [player1, player2];
-	const board = GameBoard();
+const GameController = (() => {
+	let players = [];	
 	let activePlayer = players[0];
+	const board = GameBoard;
 	let winner;
+	let winnerFound = false;
+
+	function startGame() {
+		let player1 = player(setPlayerName("player1"), "X");
+		let player2 = player(setPlayerName("player2"), "O");
+
+		players = [player1, player2];
+		activePlayer = players[0];
+		// Initial play game message
+		printNewRound();
+	}
+
+	function setPlayerName(player) {
+		var name = prompt(`${player} Please enter your username`);
+		return name;
+	}
+
 	const switchPlayerTurn = () => {
-		activePlayer = activePlayer === players[0] ? players[1] : players[0]; // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Conditional_Operator
+		activePlayer = ctivePlayer === players[0] ? players[1] : players[0]; // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Conditional_Operator
 	};
 	const getActivePlayer = () => activePlayer;
 
 	const printNewRound = () => {
-		board.printBoard();
+		//board.printBoard();
 		console.log(`${getActivePlayer().getName()}'s turn.`);
 	};
 
 	const playRound = (column, row) => {
+		if (winnerFound) {
+			return;
+		}
 		console.log(
-			`Dropping ${activePlayer.getName()}'s token into cell ${row}${column}`
+			`Dropping ${getActivePlayer().getName()}'s token into row ${row} column ${column}`
 		);
 		board.placeMarker(row, column, activePlayer);
-		//This is where we would check for a winner and handle that logic
+		//This is where we check for a winner and handle that logic
 		checkWinAndTie();
-		//checks for when the game is over, either s 3-in-a-row or a tie
 		//Activates a display element that congratulates the winning player
 
-		// Switching player turn
-		switchPlayerTurn();
-		printNewRound();
+		// Switching player turn, until winner is found
+		if (!winnerFound) {
+			switchPlayerTurn();
+			printNewRound();
+		}
 	};
 
 	const checkWinAndTie = () => {
-		let winnerFound = false;
 		board.printBoard();
 		gameBoard = board.getBoard();
 		//Check if horizontal winner
@@ -97,10 +119,8 @@ var GameController = function (player1, player2) {
 			for (var i = 0; i < gameBoard.length; i++) {
 				if (checkCells(i, 0, i, 1, i, 2)) {
 					winnerFound = true;
-					console.log(winningMessage() + "horizontal");
+					console.log(winningMessage() + " horizontal");
 					return winningMessage();
-				} else {
-					continue;
 				}
 			}
 		} //Check if vertical winner
@@ -108,7 +128,7 @@ var GameController = function (player1, player2) {
 			for (var i = 0; i < gameBoard.length; i++) {
 				if (checkCells(0, i, 1, i, 2, i)) {
 					winnerFound = true;
-					console.log(winningMessage() + "vertical");
+					console.log(winningMessage() + " vertical");
 					return winningMessage(gameBoard[i][0].getPlayerId);
 				}
 			}
@@ -116,7 +136,7 @@ var GameController = function (player1, player2) {
 		if (!winnerFound) {
 			if (checkCells(0, 0, 1, 1, 2, 2) || checkCells(0, 2, 1, 1, 2, 0)) {
 				winnerFound = true;
-				console.log(winningMessage() + "diagonal");
+				console.log(winningMessage() + " diagonal");
 				return winningMessage();
 			}
 		} else if (!gameBoard.filter((cell) => cell.value === undefined).length) {
@@ -126,7 +146,6 @@ var GameController = function (player1, player2) {
 			return;
 		}
 	};
-
 	//Checks to see if 3 cells are equal to one another & makes sure to exclude empty cells
 	const checkCells = (a, b, c, d, e, f) => {
 		const cell1 = gameBoard[a][b].getValue();
@@ -140,19 +159,69 @@ var GameController = function (player1, player2) {
 		}
 	};
 	const winningMessage = () => {
-		winner = activePlayer; 
+		winner = activePlayer;
 		return `Congrats, ${activePlayer.getName()} is the winner!`;
 	};
-	return { playRound, getActivePlayer };
-};
 
-const player1 = player("Jake", "X");
-const player2 = player("Jet", "O");
-const game = GameController(player1, player2);
-game.playRound(0, 1, player1);
-game.playRound(0, 2, player1);
-game.playRound(1, 1, player2);
-game.playRound(0, 0, player2);
-game.playRound(2, 1, player1);
-game.playRound(2, 2, player2);
-game.playRound(2, 1);
+	return {
+		startGame,
+		playRound,
+		getActivePlayer,
+		getBoard: board.getBoard,
+		set players(value) {
+			players = value; //https://stackoverflow.com/questions/38468925/javascript-generic-getter-setter-for-revealing-module-pattern
+		},
+	};
+})();
+// Module pattern - as only one needed
+// module will leverage an updateScreen pattern https://studio.code.org/docs/concepts/patterns/. update-screen-pattern/
+// The function that will render the contents of the GameBoard array to the webpage
+var ScreenController = (() => {
+	const playerTurnDiv = document.querySelector(".turn");
+	const boardDiv = document.querySelector(".gameBoard");
+	const startButton = document.querySelector(".start-restart");
+	const game = GameController;
+
+	const updateScreen = () => {
+		// clear the board
+		boardDiv.textContent = "";
+		// get the newest version of the board and player turn
+		const board = game.getBoard();
+		const activePlayer = game.getActivePlayer();
+		// Display player's turn & checks if active player is not defined
+		if (activePlayer !== undefined) {
+			playerTurnDiv.textContent = `${activePlayer.getName()}'s turn...`;
+		}
+		board.forEach((row) => {
+			row.forEach((cell, index) => {
+				//Created each of the clickable cells where people can place
+				const cellButton = document.createElement("button");
+				cellButton.classList.add("cell");
+				// Create a data attribute to identify the row and column making it easier to pass into our `playRound` function https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dataset
+				cellButton.dataset.row = row;
+				cellButton.dataset.column = index;
+
+				if (cell !== undefined) cellButton.textContent = cell.getValue();
+				boardDiv.appendChild(cellButton);
+			});
+		});
+	};
+	// Add event listener for the board to detect moves
+	function clickHandlerBoard(e) {
+		const selectedColumn = e.target.dataset.column;
+		const selectedRow = e.target.dataset.row;
+		//Checks if the spaces between the cells have been clicked and not the cell
+		if (!selectedColumn || !selectedRow) return;
+		game.playRound(selectedColumn, selectedRow);
+		updateScreen();
+	}
+	boardDiv.addEventListener("click", clickHandlerBoard);
+	startButton.addEventListener("click", () => {
+		game.startGame();
+	});
+
+	// Initial screen render
+	updateScreen();
+})();
+
+ScreenController;
