@@ -1,44 +1,6 @@
-// Module pattern - as only one needed
-//The GameBoard represents the state of the board
-var GameBoard = (function () {
-	const rows = 3;
-	const columns = 3;
-	const board = [];
-
-	//a 2d array that will represent the state of the game board
-	for (let i = 0; i < rows; i++) {
-		board[i] = [];
-		for (let j = 0; j < columns; j++) {
-			board[i].push(Cell);
-		}
-	}
-	//Checks if space is free, then adds marker using cell addMarker method
-	function placeMarker(row, column, player) {
-		//checks if cell is available to place the players token. If the move is invalid execution is stopped, prevents players from playing in spots that are already taken
-		if (board[row][column].getMarker() === "") {
-			return;
-		} else {
-			// Otherwise, I have a valid cell
-			board[row][column].addMarker(player);
-		}
-	}
-	// This will be the method of getting the entire board that our UI will eventually need to render it.
-	const getBoard = () => board;
-
-	//Call on the Cell object class for the value
-	const printBoard = () => {
-		const boardWithCellValues = board.map((row) =>
-			row.map((cell) => cell.getValue())
-		);
-		console.log(boardWithCellValues);
-	};
-
-	// an interface for the rest of our application to interact with the board
-	return { getBoard, placeMarker, printBoard };
-})();
 // Factory function pattern - as we want multiple cells
-var Cell = () => {
-	let value = "";
+const Cell = () => {
+	let value = null;
 	let playerId;
 	// Accept a player's marker to change the value of the cell allowing players to add marks to a specific spot on the board
 	const addMarker = (player) => {
@@ -50,6 +12,54 @@ var Cell = () => {
 	const getPlayerId = () => playerId;
 	return { addMarker, getValue, getPlayerId };
 };
+
+// Module pattern - as only one needed
+//The GameBoard represents the state of the board
+var GameBoard = (function () {
+	const rows = 3;
+	const columns = 3;
+	let board = [];
+
+	//a 2d array that will represent the state of the game board
+	for (let i = 0; i < rows; i++) {
+		board[i] = [];
+		for (let j = 0; j < columns; j++) {
+			const cell = Cell();
+			board[i].push(cell);
+		}
+	}
+	//Checks if space is free, then adds marker using cell addMarker method
+	function placeMarker(row, column, player) {
+		//checks if cell is available to place the players token. If the move is invalid execution is stopped, prevents players from playing in spots that are already taken
+		if (board[row][column].getValue() === null) {
+			board[row][column].addMarker(player);
+		} else {
+			// Otherwise, I have a valid cell
+			return;
+		}
+	}
+	// This will be the method of getting the entire board that our UI will eventually need to render it.
+	const getBoard = () => board;
+
+	//Call on the Cell object class for the value
+	const printBoard = () => {
+		const boardWithCellValues = board.map((row) =>
+			row.map((Cell) => Cell.getValue())
+		);
+		console.log(boardWithCellValues);
+	};
+
+	// an interface for the rest of our application to interact with the board
+	return {
+		getBoard,
+		placeMarker,
+		printBoard,
+		set board(value) {
+			board = value;
+		},
+	};
+})();
+
 // Factory function pattern - as we want multiple players
 //  Players stored in objects
 const player = (name, marker) => {
@@ -61,20 +71,16 @@ const player = (name, marker) => {
 };
 // Module pattern - as only one needed
 const GameController = (() => {
-	let players = [];	
+	let players = [];
 	let activePlayer = players[0];
 	const board = GameBoard;
-	let winner;
 	let winnerFound = false;
 
 	function startGame() {
 		let player1 = player(setPlayerName("player1"), "X");
 		let player2 = player(setPlayerName("player2"), "O");
-
-		players = [player1, player2];
+		players.push(player1, player2);
 		activePlayer = players[0];
-		// Initial play game message
-		printNewRound();
 	}
 
 	function setPlayerName(player) {
@@ -82,14 +88,23 @@ const GameController = (() => {
 		return name;
 	}
 
+	function restartGame() {
+		//Clear board
+		board.board = board.getBoard().splice(0, 2);
+		//Clear players
+		players = players.splice(0, 2);
+		console.log(players);
+		winnerFound = false;
+	}
+
 	const switchPlayerTurn = () => {
-		activePlayer = ctivePlayer === players[0] ? players[1] : players[0]; // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Conditional_Operator
+		activePlayer = activePlayer === players[0] ? players[1] : players[0]; // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Conditional_Operator
 	};
 	const getActivePlayer = () => activePlayer;
 
 	const printNewRound = () => {
-		//board.printBoard();
-		console.log(`${getActivePlayer().getName()}'s turn.`);
+		board.printBoard();
+		console.log(`${activePlayer.getName()}'s turn.`);
 	};
 
 	const playRound = (column, row) => {
@@ -110,6 +125,8 @@ const GameController = (() => {
 			printNewRound();
 		}
 	};
+
+	const getPlayers = () => players;
 
 	const checkWinAndTie = () => {
 		board.printBoard();
@@ -139,7 +156,7 @@ const GameController = (() => {
 				console.log(winningMessage() + " diagonal");
 				return winningMessage();
 			}
-		} else if (!gameBoard.filter((cell) => cell.value === undefined).length) {
+		} else if (!gameBoard.filter((Cell) => Cell.value === null).length) {
 			return `It's a tie`;
 			// if none of the condition above are met, the game continues
 		} else {
@@ -152,7 +169,7 @@ const GameController = (() => {
 		const cell2 = gameBoard[c][d].getValue();
 		const cell3 = gameBoard[e][f].getValue();
 		console.log(`${cell1} + ${cell2} + ${cell3}`);
-		if (cell1 === cell2 && cell2 === cell3 && cell1 !== "") {
+		if (cell1 === cell2 && cell2 === cell3 && cell1 !== null) {
 			return true;
 		} else {
 			return false;
@@ -165,12 +182,11 @@ const GameController = (() => {
 
 	return {
 		startGame,
+		restartGame,
 		playRound,
 		getActivePlayer,
+		getPlayers,
 		getBoard: board.getBoard,
-		set players(value) {
-			players = value; //https://stackoverflow.com/questions/38468925/javascript-generic-getter-setter-for-revealing-module-pattern
-		},
 	};
 })();
 // Module pattern - as only one needed
@@ -180,6 +196,9 @@ var ScreenController = (() => {
 	const playerTurnDiv = document.querySelector(".turn");
 	const boardDiv = document.querySelector(".gameBoard");
 	const startButton = document.querySelector(".start-restart");
+
+	const player1Name = document.querySelector(".player1Name");
+	const player2Name = document.querySelector(".player2Name");
 	const game = GameController;
 
 	const updateScreen = () => {
@@ -191,17 +210,23 @@ var ScreenController = (() => {
 		// Display player's turn & checks if active player is not defined
 		if (activePlayer !== undefined) {
 			playerTurnDiv.textContent = `${activePlayer.getName()}'s turn...`;
+			const playersArray = game.getPlayers();
+			console.log(playersArray);
+			player1Name.textContent = playersArray[0].getName();
+			player2Name.textContent = playersArray[1].getName();
 		}
-		board.forEach((row) => {
+		board.forEach((row, index) => {
+			//https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach
+			let rowNum = index;
 			row.forEach((cell, index) => {
 				//Created each of the clickable cells where people can place
 				const cellButton = document.createElement("button");
 				cellButton.classList.add("cell");
 				// Create a data attribute to identify the row and column making it easier to pass into our `playRound` function https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dataset
-				cellButton.dataset.row = row;
+				cellButton.dataset.row = rowNum;
 				cellButton.dataset.column = index;
 
-				if (cell !== undefined) cellButton.textContent = cell.getValue();
+				if (cell.getValue() !== null) cellButton.textContent = cell.getValue();
 				boardDiv.appendChild(cellButton);
 			});
 		});
@@ -217,8 +242,23 @@ var ScreenController = (() => {
 	}
 	boardDiv.addEventListener("click", clickHandlerBoard);
 	startButton.addEventListener("click", () => {
-		game.startGame();
+		if (game.getActivePlayer() === undefined) {
+			game.startGame();
+			toggleButtonText();
+		} else if (GameController.getActivePlayer().getName() !== undefined) {
+			GameController.restartGame();
+			toggleButtonText();
+		}
 	});
+
+	function toggleButtonText() {
+		if (startButton.innerHTML === "Start") {
+			startButton.innerHTML = "Restart game";
+			updateScreen();
+		} else {
+			startButton.innerHTML = "Start";
+		}
+	}
 
 	// Initial screen render
 	updateScreen();

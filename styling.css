@@ -1,16 +1,84 @@
 * {
 	margin: 0px;
 	padding: 0px;
-	font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+	font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+		Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+
+	--sandTan: #e1b382;
+	--sandTanShadow: #c89666;
+	--NightBlue: #2d545e;
+	--NightBlueShadow: #12343b;
+	--contentWidth: 50%; 
+}
+body {
+	height: 100vh;
+
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+header {
+	color: var(--sandTan);
+	background-color: #12343b;
+	}
+h1 {
+	padding: 20px;
+}
+
+main {
+	background-color: #2d545e;
+	height: 100%; 
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
 }
 
 .gameBoard {
 	display: grid;
-	height: 12em;
-	width: 12em;
+	height: var(--contentWidth);
+	width: var(--contentWidth);
 	grid-template-columns: repeat(3, 1fr);
 	grid-template-rows: repeat(3, 1fr);
 	gap: 10px;
 }
+.cell {
+	color: var(--sandTan);
+	background-color: var(--NightBlueShadow);
+	outline: none;
+	border: none;
+}
 
-
+.playerInfo {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	width: var(--contentWidth);
+}
+.column {
+	display: flex;
+	flex-direction: column;
+	flex-basis: 100%;
+	flex: 1;	
+	align-items: center;
+	padding: 20px;
+}
+.name {
+	width: 100%; ;
+	background-color: #c89666;
+	color: var(--NightBlueShadow); 
+	padding: 10px; 
+	margin: 5px; 
+	text-align: center;
+	height: 2em; 
+}
+.start-restart {
+	color: var(--sandTanShadow);
+	background-color: var(--sandTan);	
+	outline: none;
+	border: none;
+	font-size: 2em;	
+	border-radius: 10px;
+	padding: 10px 30px; 
+}
