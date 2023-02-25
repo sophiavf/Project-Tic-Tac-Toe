@@ -45,6 +45,7 @@ main {
 }
 .cell {
 	color: var(--sandTan);
+	font-weight: bold;
 	background-color: var(--NightBlueShadow);
 	outline: none;
 	border: none;
@@ -81,4 +82,29 @@ main {
 	font-size: 2em;	
 	border-radius: 10px;
 	padding: 10px 30px; 
+}
+.popup {
+	color: var(--NightBlueShadow); 
+	display:none;
+	background-color: var(--sandTan);
+	border-radius: 6px;
+	position: absolute;
+	top: 50%; 
+	left: 50%;
+	transform: translate(-50%, -50%);
+	justify-content: center;
+	flex-direction: column;
+	text-align: center; 
+	padding: 30px; 
+}
+.popup button {
+	margin-top: 30px;
+	align-self: center;
+	color: var(--sandTanShadow);
+	background-color: var(--NightBlue);
+	border-radius: 6px;
+	outline: none;
+	border: none;
+	align-content: center;
+	padding: 15px 40px;
 }

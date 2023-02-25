@@ -21,11 +21,13 @@ var GameBoard = (function () {
 	let board = [];
 
 	//a 2d array that will represent the state of the game board
-	for (let i = 0; i < rows; i++) {
-		board[i] = [];
-		for (let j = 0; j < columns; j++) {
-			const cell = Cell();
-			board[i].push(cell);
+	function populateBoard() {
+		for (let i = 0; i < rows; i++) {
+			board[i] = [];
+			for (let j = 0; j < columns; j++) {
+				const cell = Cell();
+				board[i].push(cell);
+			}
 		}
 	}
 	//Checks if space is free, then adds marker using cell addMarker method
@@ -54,6 +56,7 @@ var GameBoard = (function () {
 		getBoard,
 		placeMarker,
 		printBoard,
+		populateBoard,
 		set board(value) {
 			board = value;
 		},
@@ -74,13 +77,19 @@ const GameController = (() => {
 	let players = [];
 	let activePlayer = players[0];
 	const board = GameBoard;
-	let winnerFound = false;
+	var winnerFound = false;
+	var outcomeText = "";
+
+	if (board.getBoard().length === 0) {
+		board.populateBoard();
+	}
 
 	function startGame() {
 		let player1 = player(setPlayerName("player1"), "X");
 		let player2 = player(setPlayerName("player2"), "O");
 		players.push(player1, player2);
 		activePlayer = players[0];
+		winnerFound = false;
 	}
 
 	function setPlayerName(player) {
@@ -89,12 +98,14 @@ const GameController = (() => {
 	}
 
 	function restartGame() {
-		//Clear board
-		board.board = board.getBoard().splice(0, 2);
 		//Clear players
-		players = players.splice(0, 2);
-		console.log(players);
+		players = [];
+		//Clear board
+		board.board = [];
+		//Reset winner found variable
 		winnerFound = false;
+		//Repopulate board with empty cells
+		board.populateBoard();
 	}
 
 	const switchPlayerTurn = () => {
@@ -108,11 +119,11 @@ const GameController = (() => {
 	};
 
 	const playRound = (column, row) => {
-		if (winnerFound) {
+		if (winnerFound === true) {
 			return;
 		}
 		console.log(
-			`Dropping ${getActivePlayer().getName()}'s token into row ${row} column ${column}`
+			`Dropping ${activePlayer.getName()}'s token into row ${row} column ${column}`
 		);
 		board.placeMarker(row, column, activePlayer);
 		//This is where we check for a winner and handle that logic
@@ -120,7 +131,7 @@ const GameController = (() => {
 		//Activates a display element that congratulates the winning player
 
 		// Switching player turn, until winner is found
-		if (!winnerFound) {
+		if (winnerFound === false) {
 			switchPlayerTurn();
 			printNewRound();
 		}
@@ -136,8 +147,8 @@ const GameController = (() => {
 			for (var i = 0; i < gameBoard.length; i++) {
 				if (checkCells(i, 0, i, 1, i, 2)) {
 					winnerFound = true;
-					console.log(winningMessage() + " horizontal");
-					return winningMessage();
+					outcomeText = winningMessage();
+					return;
 				}
 			}
 		} //Check if vertical winner
@@ -145,19 +156,20 @@ const GameController = (() => {
 			for (var i = 0; i < gameBoard.length; i++) {
 				if (checkCells(0, i, 1, i, 2, i)) {
 					winnerFound = true;
-					console.log(winningMessage() + " vertical");
-					return winningMessage(gameBoard[i][0].getPlayerId);
+					outcomeText = winningMessage();
+					return;
 				}
 			}
 		} //Check if diagonal winner
 		if (!winnerFound) {
 			if (checkCells(0, 0, 1, 1, 2, 2) || checkCells(0, 2, 1, 1, 2, 0)) {
 				winnerFound = true;
-				console.log(winningMessage() + " diagonal");
-				return winningMessage();
+				outcomeText = winningMessage();
+				return;
 			}
 		} else if (!gameBoard.filter((Cell) => Cell.value === null).length) {
-			return `It's a tie`;
+			outcomeText = `It's a tie`;
+			return;
 			// if none of the condition above are met, the game continues
 		} else {
 			return;
@@ -180,6 +192,9 @@ const GameController = (() => {
 		return `Congrats, ${activePlayer.getName()} is the winner!`;
 	};
 
+	const getWinnerFound = () => winnerFound;
+	const getOutcomeText = () => outcomeText;
+
 	return {
 		startGame,
 		restartGame,
@@ -187,6 +202,8 @@ const GameController = (() => {
 		getActivePlayer,
 		getPlayers,
 		getBoard: board.getBoard,
+		getWinnerFound,
+		getOutcomeText,
 	};
 })();
 // Module pattern - as only one needed
@@ -196,6 +213,9 @@ var ScreenController = (() => {
 	const playerTurnDiv = document.querySelector(".turn");
 	const boardDiv = document.querySelector(".gameBoard");
 	const startButton = document.querySelector(".start-restart");
+	const confirmButton = document.querySelector(".confirm");
+	const popupWindow = document.querySelector(".popup");
+	const outcomeText = document.querySelector(".winnerText");
 
 	const player1Name = document.querySelector(".player1Name");
 	const player2Name = document.querySelector(".player2Name");
@@ -214,6 +234,10 @@ var ScreenController = (() => {
 			console.log(playersArray);
 			player1Name.textContent = playersArray[0].getName();
 			player2Name.textContent = playersArray[1].getName();
+			if (game.getWinnerFound() === true) {
+				outcomeText.textContent = game.getOutcomeText();
+				popupWindow.style.display = "block";
+			}
 		}
 		board.forEach((row, index) => {
 			//https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach
@@ -245,7 +269,7 @@ var ScreenController = (() => {
 		if (game.getActivePlayer() === undefined) {
 			game.startGame();
 			toggleButtonText();
-		} else if (GameController.getActivePlayer().getName() !== undefined) {
+		} else {
 			GameController.restartGame();
 			toggleButtonText();
 		}
@@ -257,9 +281,13 @@ var ScreenController = (() => {
 			updateScreen();
 		} else {
 			startButton.innerHTML = "Start";
+			game.startGame(); 
+			updateScreen();
 		}
 	}
-
+	confirmButton.addEventListener("click", () => {
+		popupWindow.style.display = "none";
+	});
 	// Initial screen render
 	updateScreen();
 })();
