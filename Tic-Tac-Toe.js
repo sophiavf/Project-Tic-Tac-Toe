@@ -192,8 +192,8 @@ const GameController = (() => {
 		return `Congrats, ${activePlayer.getName()} is the winner!`;
 	};
 
-	const getWinnerFound = () => winnerFound;
-	const getOutcomeText = () => outcomeText;
+	//const getWinnerFound = () => winnerFound;
+	//const getOutcomeText = () => outcomeText;
 
 	return {
 		startGame,
@@ -202,8 +202,8 @@ const GameController = (() => {
 		getActivePlayer,
 		getPlayers,
 		getBoard: board.getBoard,
-		getWinnerFound,
-		getOutcomeText,
+		winnerFound: winnerFound, // 
+		outcomeText: outcomeText
 	};
 })();
 // Module pattern - as only one needed
@@ -215,7 +215,7 @@ var ScreenController = (() => {
 	const startButton = document.querySelector(".start-restart");
 	const confirmButton = document.querySelector(".confirm");
 	const popupWindow = document.querySelector(".popup");
-	const outcomeText = document.querySelector(".winnerText");
+	const outcomeTextElement = document.querySelector(".winnerText");
 
 	const player1Name = document.querySelector(".player1Name");
 	const player2Name = document.querySelector(".player2Name");
@@ -234,8 +234,8 @@ var ScreenController = (() => {
 			console.log(playersArray);
 			player1Name.textContent = playersArray[0].getName();
 			player2Name.textContent = playersArray[1].getName();
-			if (game.getWinnerFound() === true) {
-				outcomeText.textContent = game.getOutcomeText();
+			if (game.winnerFound === true) {
+				outcomeTextElement.textContent = game.outcomeText;
 				popupWindow.style.display = "block";
 			}
 		}
